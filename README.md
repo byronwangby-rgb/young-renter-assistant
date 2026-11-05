@@ -110,7 +110,7 @@ young-renter-assistant/
 └── LICENSE                   # MIT
 ```
 
-> 文件计数：本仓库共 **21 个文件**＝`SKILL.md`＋`README.md`＋`LICENSE`＋`references/` 13 份＋`workbench/` 5 份。
+> 文件计数：技能内容共 **21 个文件**＝`SKILL.md`＋`README.md`＋`LICENSE`＋`references/` 13 份＋`workbench/` 5 份（另有 `.gitattributes` 一项仓库配置，不计入内容计数）。
 > 完整开发包另含 `evals/`（14 份记录＋`struct_check.py`）、`CHANGELOG.md` 与 `check.ps1`，均**不在本仓库**。
 
 ## 打包与装载注意
