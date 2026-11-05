@@ -2,6 +2,17 @@
 
 > **公开版范围**：本仓库只收录**运行必需**的文件——`SKILL.md`、`references/`（13 份）、`workbench/`（5 份操作模板）、`README.md`、`LICENSE`。开发期的评测记录（`evals/`）、版本日志（`CHANGELOG.md`）与自检脚本（`check.ps1`、`evals/check.py`）**不在本仓库**。下文若出现这些路径，均指完整开发包内的文件，不影响规则适用与运行。
 
+## English summary
+
+**young-renter-assistant** is an Agent Skill for rental decisions in China (Hangzhou-first), written for interns and early-career renters. It is a *decision guardrail*, not a decision maker.
+
+- **What it handles**: comparing candidate listings on full-cost monthly spend (rent + utilities + property fee + commuting + one-off costs); finding a flat from scratch (search keywords, channels, viewing checklist); renewal or move decisions; and pre-signing lease review against a 13-item red-line list.
+- **How it works**: `SKILL.md` holds the workflow (four flows A/B/C/D, output standards, self-check list). `references/` holds the knowledge (Chinese civil code anchors, scoring rules, market reference, glossaries). `workbench/` holds the operational templates the flows actually load at runtime.
+- **What it refuses**: it does not search listings for you, does not verify ownership, does not predict court outcomes, and does not give formal legal advice. It stops and refers out when a case is beyond rules.
+- **How to load**: put this directory where your agent loads skills (entry point `SKILL.md`, frontmatter `name` = `young-renter-assistant`). Host-specific degradation (Doubao client, Claude Code / Claude.ai, other agent clients, offline local models) is covered in `references/host-adapters.md`.
+- **Language**: the skill body is Chinese, since the legal anchors and market data are Chinese. This summary is for readers deciding whether to try it.
+- **License**: MIT. Content is informational, not legal advice.
+
 ## 这是什么
 
 「年轻人租房助手」是一个面向**实习学生与刚参加工作的职场新人**的租房决策辅助技能包（Skill）：处理已有候选的筛选对比（A）、从零找房指引（B）、续租/换租决策（C）、签约前合同条款审查（D），法律风险识别为主、叠加社会主流关注。输出以 Markdown 为主，按 `SKILL.md` 4.2 的**两档结构**落地：重大决策档走七段式标准结构，咨询档只写"结论＋依据＋风险边界"三要素（C 流程的"成本核算""谈判要点"为附加段）。

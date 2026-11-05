@@ -1,0 +1,11 @@
+# 统一换行符：仓库内文本一律 LF，Windows 上检出也不会出现 CRLF 混合
+* text=auto eol=lf
+
+*.md text eol=lf
+LICENSE text eol=lf
+
+# 二进制/不可比对的类型
+*.docx binary
+*.png binary
+*.jpg binary
+*.pdf binary
