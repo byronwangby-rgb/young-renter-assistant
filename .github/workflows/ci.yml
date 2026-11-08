@@ -4,13 +4,17 @@ name: skill-gate
 # 结构性契约，失败即挡下。只依赖公开仓库本身资产（SKILL.md / README.md），
 # 不引入 evals/、check.ps1 等开发期资产——公开版范围与开发包严格分离。
 #
-# 检查项：
+# 检查项（实现见 .github/structure_gate.py，本地可同命令复现）：
 #   1) frontmatter 合法，且 name 必须为 young-renter-assistant
 #   2) 代码围栏（```）成对闭合
 #   3) 无 CRLF 行尾（公开版约定 LF-only）
-#   4) README 的"附录 B · 补充说明"存在（workbuddy 改造说明未丢失）
+#   4) README 的「附录 B · 补充说明」存在（workbuddy 改造说明未丢失）
 #   5) SKILL 的版本锚点（"当前版本：**X**"）存在
 #   6) 表格分隔行列数一致（防 Markdown 表格结构损坏）
+#
+# 注：v2.6.2 之前本工作流把 python 脚本以 heredoc 内联在 run 里，正文顶格写导致
+# YAML 无法解析（6 次 push 全部 startup_failure、jobs 为空），结构门实际从未运行。
+# 现改为独立脚本文件，既修好 YAML，也让本地能跑同一条命令。
 
 on:
   push:
@@ -27,56 +31,4 @@ jobs:
         with:
           python-version: "3.11"
       - name: 结构门
-        run: python - <<'PY'
-import sys, re
-from pathlib import Path
-
-failures = []
-
-def fail(msg):
-    failures.append(msg)
-    print(f"[FAIL] {msg}")
-
-def check_file(p: Path):
-    text = p.read_text(encoding="utf-8")
-    # 3) 无 CRLF
-    if "\r" in text:
-        fail(f"{p.name}: 含 CRLF（约定 LF-only）")
-    # 2) 代码围栏成对
-    fences = [ln for ln in text.splitlines() if ln.startswith("```")]
-    if len(fences) % 2 != 0:
-        fail(f"{p.name}: 代码围栏不成对（{len(fences)} 处）")
-    # 6) 表格分隔行列数一致
-    lines = text.splitlines()
-    for i, ln in enumerate(lines):
-        if re.match(r"^\s*\|[-: ]+\|\s*$", ln) and i > 0:
-            header_pipes = lines[i - 1].count("|")
-            if header_pipes != ln.count("|"):
-                fail(f"{p.name}: 表格分隔行列数与表头不一致（行 {i + 1}）")
-    return text
-
-skill = check_file(Path("SKILL.md"))
-readme = check_file(Path("README.md"))
-
-# 1) frontmatter
-if not skill.startswith("---"):
-    fail("SKILL.md: 缺少 frontmatter（须以 --- 开头）")
-else:
-    end = skill.find("\n---", 3)
-    fm = skill[3:end] if end != -1 else ""
-    if "name: young-renter-assistant" not in fm:
-        fail("SKILL.md: frontmatter 中 name 不是 young-renter-assistant")
-
-# 5) SKILL 版本锚点
-if not re.search(r"当前版本：\*\*[0-9][0-9.]*\*\*", skill):
-    fail("SKILL.md: 缺少『当前版本：**X**』版本锚点")
-
-# 4) README 附录 B
-if "## 附录 B" not in readme:
-    fail("README.md: 缺少『附录 B · 补充说明』（workbuddy 改造说明）")
-
-if failures:
-    print(f"== 结构门未通过：{len(failures)} 项 ==")
-    sys.exit(1)
-print("== 结构门通过 ==")
-PY
+        run: python .github/structure_gate.py
