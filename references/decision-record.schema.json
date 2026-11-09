@@ -2,10 +2,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/byronwangby-rgb/young-renter-assistant/references/decision-record.schema.json",
   "title": "young-renter-assistant 决策记录（4.2⑨ decision record）",
-  "description": "SKILL.md 4.2⑨ 的机器可读形态。键名与枚举以本文件为准；与开发包 evals/decision_gate.py 的 RECORD_REQUIRED_KEYS / TIERS 由 check.py 做一致性断言（两者冲突时以 decision_gate.py 为准，因为它是运行时校验器）。本文件只描述结构，不判定业务正确性。",
+  "description": "SKILL.md 4.2⑨ 的机器可读形态。键名与枚举以本文件为准；SKILL.md 正文与本文件冲突时以本文件为准。本文件只描述结构，不判定业务正确性。",
   "type": "object",
   "additionalProperties": true,
-  "required": ["档位", "场景", "结论", "引用锚点", "数值三级", "免责声明"],
+  "required": ["档位", "结论", "引用锚点", "数值三级", "免责声明"],
   "properties": {
     "档位": {
       "type": "string",
@@ -15,7 +15,7 @@
     "场景": {
       "type": "string",
       "enum": ["A", "B", "C", "D"],
-      "description": "A 候选对比／B 从零找房／C 续租换租／D 合同审查；emergency 档按紧急处置，场景字段可缺省"
+      "description": "A 候选对比／B 从零找房／C 续租换租／D 合同审查。本键**非必填**：emergency 档按紧急处置，可整字段省略"
     },
     "必现段命中": {
       "type": "object",
@@ -57,7 +57,7 @@
           "月支出合计": {
             "oneOf": [
               { "type": "number", "minimum": 0 },
-              { "type": "string", "pattern": "^(出局\\(未算分\\)|待补充)$" }
+              { "type": "string", "pattern": "^(出局（未算分）|待补充)$" }
             ]
           }
         }
@@ -86,7 +86,7 @@
       "description": "法条文号＋实施状态；每个引用须能在 references/ 或 workbench/溯源表.md 定位（SKILL.md 5.4 第 7 条）",
       "items": {
         "type": "object",
-        "required": ["名称", "条号"],
+        "required": ["名称", "条号", "实施状态"],
         "properties": {
           "名称": { "type": "string", "description": "如《民法典》" },
           "条号": { "type": "string", "description": "如 716；无条号的示范文本填「—」" },
@@ -118,30 +118,31 @@
     },
     "权重": {
       "type": "object",
-      "description": "A 场景打分时的维度权重（维度→权重）。各值之和须为 1（容差 0.01），由 evals/decision_gate.py 校验；不是法源，是作者经验设定（SKILL.md 3.6 加载即分层）",
-      "additionalProperties": { "type": "number", "minimum": 0 }
+      "description": "维度→权重（键名任意维度名）。各键之和须为 1，容差 0.01；用户明示优先级时须能由推导得出（renter-profile.md）",
+      "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minProperties": 1
     },
     "覆盖率": {
       "type": "object",
-      "description": "A 场景打分时必填。已评维度/总维度/覆盖率/加权总分/可达满分；decision_gate 校验覆盖率＝已评÷总（容差 0.01）、且加权总分不得超过 5×覆盖率（满分基准 5，见 comparison-dimensions）",
-      "required": ["已评维度", "总维度", "覆盖率", "加权总分"],
+      "description": "A 场景打分时必填：覆盖率＝参与加权维度的权重之和；可达满分＝5×覆盖率；加权总分＝Σ(权重×得分)，**不得超过可达满分**（SKILL.md 4.2⑨）。B/C/D 场景不适用时填「—」",
+      "required": ["覆盖率", "加权总分", "可达满分"],
       "properties": {
-        "已评维度": { "type": "integer", "minimum": 0 },
-        "总维度": { "type": "integer", "minimum": 1 },
+        "已评维度": { "type": ["array", "string"] },
+        "总维度": { "type": ["array", "string"] },
         "覆盖率": { "type": "number", "minimum": 0, "maximum": 1 },
-        "加权总分": { "type": "number", "minimum": 0 },
-        "可达满分": { "type": "number", "minimum": 0, "description": "＝满分 5 × 覆盖率；缺省时按 5×覆盖率 推导" }
+        "加权总分": { "type": "number", "minimum": 0, "maximum": 5 },
+        "可达满分": { "type": "number", "minimum": 0, "maximum": 5 }
       }
     },
     "三态": {
       "type": "array",
-      "description": "D 流程 13 条红线的逐条判定；「无法判断」不得推定合规",
+      "description": "D 流程 13 条红线的逐条判定；「无法判断」不得推定合规；该条款完全不存在时记「无法判断（未约定）」，不得记「未命中」",
       "items": {
         "type": "object",
         "required": ["条款", "判定"],
         "properties": {
           "条款": { "type": "string" },
-          "判定": { "type": "string", "enum": ["命中", "未命中", "无法判断"] }
+          "判定": { "type": "string", "enum": ["命中", "未命中", "无法判断", "无法判断（未约定）"] }
         }
       }
     },
