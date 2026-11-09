@@ -1,0 +1,142 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/byronwangby-rgb/young-renter-assistant/references/decision-record.schema.json",
+  "title": "young-renter-assistant 决策记录（4.2⑨ decision record）",
+  "description": "SKILL.md 4.2⑨ 的机器可读形态。键名与枚举以本文件为准；与开发包 evals/decision_gate.py 的 RECORD_REQUIRED_KEYS / TIERS 由 check.py 做一致性断言（两者冲突时以 decision_gate.py 为准，因为它是运行时校验器）。本文件只描述结构，不判定业务正确性。",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["档位", "场景", "结论", "引用锚点", "数值三级", "免责声明"],
+  "properties": {
+    "档位": {
+      "type": "string",
+      "enum": ["decision", "consult", "emergency"],
+      "description": "对应 SKILL.md 4.2① 三值判别，任一命中即取该值"
+    },
+    "场景": {
+      "type": "string",
+      "enum": ["A", "B", "C", "D"],
+      "description": "A 候选对比／B 从零找房／C 续租换租／D 合同审查；emergency 档按紧急处置，场景字段可缺省"
+    },
+    "必现段命中": {
+      "type": "object",
+      "description": "七个标准段名各自是否出现；只记布尔，不复述段内容",
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "properties": {
+        "结论与状态": { "type": "boolean" },
+        "适用范围": { "type": "boolean" },
+        "现在就做": { "type": "boolean" },
+        "时效与未知项": { "type": "boolean" },
+        "风险或权益提示": { "type": "boolean" },
+        "依据": { "type": "boolean" },
+        "免责声明": { "type": "boolean" }
+      }
+    },
+    "结论": {
+      "type": "string",
+      "minLength": 1,
+      "description": "一句话结论；命中 5.1 任一类时首句须写明停止精确裁定并给安全下一步"
+    },
+    "表一_全口径月支出": {
+      "type": "array",
+      "description": "A 场景表一；每行一套候选。硬约束出局者的「月支出合计」必须填字符串「出局（未算分）」，不得填 0 或空",
+      "items": {
+        "type": "object",
+        "required": ["房源", "月支出合计"],
+        "properties": {
+          "房源": { "type": "string" },
+          "房租": { "type": ["number", "string"] },
+          "电": { "type": ["number", "string"] },
+          "水": { "type": ["number", "string"] },
+          "燃气": { "type": ["number", "string"] },
+          "宽带": { "type": ["number", "string"] },
+          "物业公摊": { "type": ["number", "string"] },
+          "一次性摊销": { "type": ["number", "string"] },
+          "通勤票价": { "type": ["number", "string"] },
+          "月支出合计": {
+            "oneOf": [
+              { "type": "number", "minimum": 0 },
+              { "type": "string", "pattern": "^(出局\\(未算分\\)|待补充)$" }
+            ]
+          }
+        }
+      }
+    },
+    "表二_首次现金": {
+      "type": "array",
+      "description": "短租（≤6 个月）必含；租期总现金 ＝ 首次合计 ＋ 月支出合计 × 租期 − 首月租金（押金为可退项，单列不冲抵）",
+      "items": {
+        "type": "object",
+        "required": ["房源", "首次合计", "租期总现金"],
+        "properties": {
+          "房源": { "type": "string" },
+          "押金": { "type": ["number", "string"] },
+          "中介费": { "type": ["number", "string"] },
+          "首月租金": { "type": ["number", "string"] },
+          "定金": { "type": ["number", "string"] },
+          "其他": { "type": ["number", "string"] },
+          "首次合计": { "type": ["number", "string"] },
+          "租期总现金": { "type": ["number", "string"] }
+        }
+      }
+    },
+    "引用锚点": {
+      "type": "array",
+      "description": "法条文号＋实施状态；每个引用须能在 references/ 或 workbench/溯源表.md 定位（SKILL.md 5.4 第 7 条）",
+      "items": {
+        "type": "object",
+        "required": ["名称", "条号"],
+        "properties": {
+          "名称": { "type": "string", "description": "如《民法典》" },
+          "条号": { "type": "string", "description": "如 716；无条号的示范文本填「—」" },
+          "实施状态": { "type": "string", "description": "如「2021-01-01 施行」或「现行有效」" }
+        }
+      }
+    },
+    "数值三级": {
+      "type": "array",
+      "description": "每个进入结论的数值都要标效力级别。甲＝内置未过期（带核验日）；乙＝现查未过期（带来源＋检索日，进结论前须用户确认）；降乙＝内置超 90 天未重验（带「过期未重验」，一律不进预算结论）；丙＝查不到",
+      "items": {
+        "type": "object",
+        "required": ["值", "级别"],
+        "properties": {
+          "值": { "type": ["number", "string"] },
+          "项目": { "type": "string", "description": "如「电价」「押金」" },
+          "级别": { "type": "string", "enum": ["甲", "乙", "降乙", "丙"] },
+          "核验日或检索日": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "甲/乙必填（ISO 日期）" },
+          "来源": { "type": "string", "description": "乙级必填（官方页面或文号）" },
+          "时效说明": { "type": "string", "description": "降乙必填，须含「过期未重验」" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "type": "array", "contains": { "properties": { "级别": { "const": "降乙" } }, "required": ["级别"] } },
+          "then": { "type": "array", "items": { "if": { "properties": { "级别": { "const": "降乙" } }, "required": ["级别"] }, "then": { "required": ["时效说明"] } } }
+        }
+      ]
+    },
+    "三态": {
+      "type": "array",
+      "description": "D 流程 13 条红线的逐条判定；「无法判断」不得推定合规",
+      "items": {
+        "type": "object",
+        "required": ["条款", "判定"],
+        "properties": {
+          "条款": { "type": "string" },
+          "判定": { "type": "string", "enum": ["命中", "未命中", "无法判断"] }
+        }
+      }
+    },
+    "停止条件命中": {
+      "type": ["string", "array", "null"],
+      "description": "命中 SKILL.md 5.1 九类停止条件的编号（1—9）与简述；未命中填 null 或空数组",
+      "items": { "type": "string" }
+    },
+    "免责声明": {
+      "type": "string",
+      "minLength": 1,
+      "description": "4.2③ D1 口径；decision 档每次必现，不得缺失或以沉默代替"
+    }
+  }
+}

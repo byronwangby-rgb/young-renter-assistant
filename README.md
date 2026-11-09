@@ -1,6 +1,6 @@
 # 年轻人租房助手（young-renter-assistant）· README
 
-> **公开版范围**：本仓库只收录**运行必需**的文件——`SKILL.md`、`references/`（14 份）、`workbench/`（5 份操作模板）、`README.md`、`LICENSE`。开发期的评测记录（`evals/`）、版本日志（`CHANGELOG.md`）与自检脚本（`check.ps1`、`evals/check.py`）**不在本仓库**。下文若出现这些路径，均指完整开发包内的文件，不影响规则适用与运行。
+> **公开版范围**：本仓库只收录**运行必需**的文件——`SKILL.md`、`references/`（15 份 Markdown＋1 份 JSON schema）、`workbench/`（5 份操作模板）、`README.md`、`LICENSE`。开发期的评测记录（`evals/`）、版本日志（`CHANGELOG.md`）与自检脚本（`check.ps1`、`evals/check.py`）**不在本仓库**。下文若出现这些路径，均指完整开发包内的文件，不影响规则适用与运行。
 
 > **读我方式**：按"定义 → 流程 → 规范 → 边界"四层组织。第 1–3 节：这是什么、适不适用、怎么开始；第 4 节：能做什么；第 5 节：判定与输出规范（口径表）；第 6–8 节：文件地图、装载与限制；第 9 节以后：版本与附录。**规则细节一律以 `SKILL.md` 与 `references/` 为准，本文件只做使用说明、不另立规则。**
 
@@ -108,9 +108,10 @@
 ```
 young-renter-assistant/
 ├── SKILL.md                  # 主说明：五要素＋判定与输出规范，入口文件
-├── references/               # 知识层（14 份）
+├── references/               # 知识层（15 份 Markdown＋1 份 JSON schema）
 │   ├── legal-risk-notes.md   # 痛点→风险锚点（否决/警示/提示）＋行动
-│   ├── legal-sources.md      # 法源与争议：民法典 703–734 速查、浙江/杭州规定、法释〔2020〕17 号
+│   ├── legal-sources.md      # 法源速查：民法典 703–734 速查、浙江/杭州规定、法释〔2020〕17 号
+│   ├── legal-disputes.md     # 争议问题汇编（10 类疑难个案的焦点/口径/建议；只在争议型追问时读）
 │   ├── contract-review.md    # 13 条条款红线＋三态判定＋条款审查表（D 流程）
 │   ├── renter-profile.md     # 画像、默认权重与"明示优先级"权重推导
 │   ├── comparison-dimensions.md # 比较维度、锚点、硬约束、降级、平局与敏感性
@@ -122,18 +123,19 @@ young-renter-assistant/
 │   ├── city-module-template.md # 城市模块模板（未填即"未覆盖"）
 │   ├── refresh-checklist.md  # 法源/政策核验周期与失效处理
 │   ├── examples.md           # 合格输出范例（A 类双表对比、D 类 13 条红线审查）
-│   └── host-adapters.md      # 宿主适配对照表（豆包/Claude/其他 agent/本地模型）
+│   ├── host-adapters.md      # 宿主适配对照表（豆包/Claude/其他 agent/本地模型）
+│   └── decision-record.schema.json # 决策记录（4.2⑨）的 JSON Schema，可用任意 draft-07 校验器验证
 ├── workbench/                # 运行时操作模板（5 份）
 │   ├── 风险点核验表.md        # A 流程风险层逐条打勾
 │   ├── 检索留痕表.md          # 宽检→精检→交叉验证→回溯更新
 │   ├── 溯源表.md              # 法源/判例回链与核验日期
 │   ├── 编号映射.md            # 三套 13 条编号（痛点/红线/核验）对照
-│   └── 来源分级.md            # A/B/C/D 来源可信度分级与可支撑结论
+│   └── 来源分级.md            # A/B/C/D/E/F 六级权威性全序（含 references 文件权威层）
 ├── README.md                 # 本文件
 └── LICENSE                   # MIT
 ```
 
-> **运行资产**：上树 21 个文件（`SKILL.md`＋`README.md`＋`LICENSE`＋`references/` 13＋`workbench/` 5；`.gitattributes` 为仓库配置，不计入内容计数）。**开发资产**（不在本仓库）：`evals/`（15 份 Markdown＋`struct_check.py`／`decision_gate.py`／`check.py`）、`CHANGELOG.md`、`check.ps1`、`提交前证据补录指引.md`。
+> **运行资产**：上树 24 个文件（`SKILL.md`＋`README.md`＋`LICENSE`＋`references/` 15 份 Markdown＋1 份 `decision-record.schema.json`＋`workbench/` 5；`.gitattributes` 为仓库配置，不计入内容计数）。**开发资产**（不在本仓库）：`evals/`（16 份 Markdown＋`struct_check.py`／`decision_gate.py`／`check.py`／`doc_lint.py`／`verify_examples.py`）、`CHANGELOG.md`、`check.ps1`、`提交前证据补录指引.md`。
 
 ## 7. 装载 / 依赖
 
@@ -175,7 +177,7 @@ young-renter-assistant/
 
 > 本版本基于原版 `young‑renter‑assistant v2.5.4` 改造，**业务判定口径、法条逻辑、比价/押金规则完全保持不变**，仅针对 WorkBuddy / Trae 类对话助手增加宿主适配层。
 >
-> 本节描述的是**改造版**：其适配层、开发期脚本与评测资产不在本仓库。本仓库运行资产为当前正式版（截至 v2.6.2，判定口径自 v2.5.4 起未变），版本号以 `SKILL.md` 第 6 节为准；宿主适配口径以 `SKILL.md` 第 7 节与 `references/host-adapters.md` 为准。
+> 本节描述的是**改造版**：其适配层、开发期脚本与评测资产不在本仓库。本仓库运行资产为当前正式版（截至 v2.7.0，判定口径自 v2.5.4 起未变），版本号以 `SKILL.md` 第 6 节为准；宿主适配口径以 `SKILL.md` 第 7 节与 `references/host-adapters.md` 为准。
 
 ### 主要改动点
 
