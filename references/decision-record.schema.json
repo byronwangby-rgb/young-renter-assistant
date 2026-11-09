@@ -116,6 +116,23 @@
         }
       ]
     },
+    "权重": {
+      "type": "object",
+      "description": "A 场景打分时的维度权重（维度→权重）。各值之和须为 1（容差 0.01），由 evals/decision_gate.py 校验；不是法源，是作者经验设定（SKILL.md 3.6 加载即分层）",
+      "additionalProperties": { "type": "number", "minimum": 0 }
+    },
+    "覆盖率": {
+      "type": "object",
+      "description": "A 场景打分时必填。已评维度/总维度/覆盖率/加权总分/可达满分；decision_gate 校验覆盖率＝已评÷总（容差 0.01）、且加权总分不得超过 5×覆盖率（满分基准 5，见 comparison-dimensions）",
+      "required": ["已评维度", "总维度", "覆盖率", "加权总分"],
+      "properties": {
+        "已评维度": { "type": "integer", "minimum": 0 },
+        "总维度": { "type": "integer", "minimum": 1 },
+        "覆盖率": { "type": "number", "minimum": 0, "maximum": 1 },
+        "加权总分": { "type": "number", "minimum": 0 },
+        "可达满分": { "type": "number", "minimum": 0, "description": "＝满分 5 × 覆盖率；缺省时按 5×覆盖率 推导" }
+      }
+    },
     "三态": {
       "type": "array",
       "description": "D 流程 13 条红线的逐条判定；「无法判断」不得推定合规",
